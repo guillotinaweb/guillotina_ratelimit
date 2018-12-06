@@ -1,7 +1,5 @@
 from guillotina import configure
 from guillotina.interfaces import IAfterTraversalEvent
-from guillotina.interfaces import IAfterAuthenticationEvent
-from guillotina_ratelimit.state import get_ratelimit_state_manager
 from guillotina_ratelimit.manager import GlobalRateLimitManager
 from guillotina_ratelimit.manager import ServiceRateLimitManager
 

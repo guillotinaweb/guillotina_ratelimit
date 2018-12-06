@@ -1,3 +1,6 @@
+from guillotina import configure
+
+
 app_settings = {
     "ratelimit": {
         "global": {
@@ -12,7 +15,7 @@ app_settings = {
 _registered_service_ratelimits = {}
 
 
-def register_ratelimits(klass, config)
+def register_ratelimits(klass, config):
     if klass in _registered_service_ratelimits:
         # do not register twice
         raise Exception('Rate-limit was configured twice!')
