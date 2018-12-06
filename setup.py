@@ -33,6 +33,7 @@ setup(
             'pytest-cov',
             'coverage',
             'pytest-docker-fixtures',
+            'guillotina_rediscache',
         ]
     },
     license='BSD',

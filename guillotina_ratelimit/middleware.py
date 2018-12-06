@@ -8,8 +8,11 @@ class RateLimitHandler:
         self.handler = handler
 
     async def __call__(self, request):
-        await GlobalRateLimitManager(request).__call__()
-        await ServiceRateLimitManager(request).__call__()
+        # The following will raise HTTPTooManyRequests if limits are
+        # exceeded, and pass otherwise
+        await GlobalRateLimitManager(request)()
+        await ServiceRateLimitManager(request)()
+
         resp = await self.handler(request)
         return resp
 

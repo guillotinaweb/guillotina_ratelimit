@@ -1,6 +1,6 @@
 from guillotina import configure
-from guillotina_ratelimit import rate_limit
 from guillotina_ratelimit import configure_ratelimits
+
 
 @configure_ratelimits(seconds=5, hits=2)
 @configure.service(name='@foobar', method='POST')
@@ -13,7 +13,7 @@ async def foobar(context, request):
     # Get count
     count = request.query['count']
     # Set title
-    context.title += f'-foobar-{count}'
+    context.title += f'-{count}'
     context._p_register()
     # Return it
     return {'title': context.title}

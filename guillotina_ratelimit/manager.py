@@ -32,8 +32,12 @@ class RateLimitManager:
         )
 
     async def exceeds_limits(self):
+        if not self.configured_ratelimits:
+            return False
+
+        limit = self.configured_ratelimits['hits']
         current_count = await self.get_current_count()
-        return current_count > self.configured_ratelimits['hits']
+        return current_count > limit
 
     async def get_retry_after(self):
         return await self.state_manager.get_remaining_time(

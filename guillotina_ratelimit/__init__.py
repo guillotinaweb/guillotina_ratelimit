@@ -1,4 +1,4 @@
-from guillotina import configure
+# from guillotina import configure
 
 
 app_settings = {
@@ -41,4 +41,5 @@ def includeme(root):
     """
     custom application initialization here
     """
-    configure.scan('guillotina_ratelimit.api')
+    # configure.scan('guillotina_ratelimit.api')
+    pass
