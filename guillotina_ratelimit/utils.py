@@ -35,6 +35,6 @@ def get_ratelimit_state_manager():
     """
     utility = get_utility(
         IRateLimitingStateManager,
-        name=app_settings.get('rate_limiter', {}).get('state_manager', 'memory'),
+        name=app_settings.get('ratelimit', {}).get('state_manager', 'memory'),
     )
     return utility
