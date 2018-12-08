@@ -1,7 +1,3 @@
-from guillotina import app_settings
-from guillotina.component import get_utility
-from guillotina.interfaces import IRateLimitingStateManager
-
 import asyncio
 import time
 
@@ -28,13 +24,3 @@ class Timer:
     def cancel(self):
         self._task.cancel()
         self.finished = True
-
-
-def get_ratelimit_state_manager():
-    """Returns memory persistent_manager by default
-    """
-    utility = get_utility(
-        IRateLimitingStateManager,
-        name=app_settings.get('ratelimit', {}).get('state_manager', 'memory'),
-    )
-    return utility

@@ -4,24 +4,33 @@ import pytest
 
 
 base_ratelimit_settings = {
-    'persistent_manager': 'memory',
-    'redis_prefix_key': 'ratelimit-'
+    'state_manager': 'memory',
+    'redis_prefix_key': 'ratelimit-',
+    # Global rate limits
+    'global': {'seconds': 10, 'hits': 10},
 }
 
 
 def base_settings_configurator(settings):
+    # Install addon and test package
     settings.setdefault('applications', [])
     settings['applications'].extend([
         'guillotina_ratelimit', 'guillotina_ratelimit.tests.package'
     ])
+
+    # Add package custom settings
     settings['ratelimit'] = base_ratelimit_settings
+
+    # Add middleware
+    settings.setdefault('middlewares', [])
+    settings['middlewares'].append('guillotina_ratelimit.middleware.middleware_factory')
 
 
 testing.configure_with(base_settings_configurator)
 
 
 @pytest.fixture('function', params=[
-    # {'state_manager': 'redis'},
+    {'state_manager': 'redis'},
     {'state_manager': 'memory'},
 ])
 def state_manager(request, redis, dummy_request, loop):
@@ -29,7 +38,6 @@ def state_manager(request, redis, dummy_request, loop):
     app_settings['ratelimit']['state_manager'] = configured_mgr
     if configured_mgr == 'redis':
         # Redis
-        app_settings['redis_prefix_key'] = f'ratelimit-'
         app_settings.update({"redis": {
             'host': redis[0],
             'port': redis[1],
@@ -38,6 +46,7 @@ def state_manager(request, redis, dummy_request, loop):
                 "maxsize": 5,
             },
         }})
+
         yield redis
 
         # NOTE: we need to close the redis pool otherwise it's

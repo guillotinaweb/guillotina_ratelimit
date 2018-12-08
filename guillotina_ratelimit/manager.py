@@ -1,4 +1,4 @@
-from guillotina_ratelimit.utils import get_ratelimit_state_manager
+from guillotina_ratelimit.state import get_state_manager
 from guillotina.utils.auth import get_authenticated_user_id
 from guillotina.response import HTTPTooManyRequests
 from guillotina import app_settings
@@ -8,7 +8,7 @@ from guillotina_ratelimit import get_service_ratelimits
 class RateLimitManager:
     def __init__(self, request):
         self.request = request
-        self.state_manager = get_ratelimit_state_manager()
+        self.state_manager = get_state_manager()
         self.user = get_authenticated_user_id(self.request)
 
     @property
@@ -77,17 +77,15 @@ class GlobalRateLimitManager(RateLimitManager):
 class ServiceRateLimitManager(RateLimitManager):
     @property
     def request_key(self):
-        import pdb; pdb.set_trace()
-        context_id = 'TODO'
-        service_method = self.request.method
-        service_name = 'TODO'
-        return f'{service_method} {context_id}/{service_name}'
+        method = self.request.method
+        path = self.request.path
+        return f'{method} {path}'
 
     @property
     def configured_ratelimits(self):
-        import pdb; pdb.set_trace()
-        service = 'TODO'
-        return get_service_ratelimits(service)
+        method = self.request.method
+        view_name = self.request.view_name
+        return get_service_ratelimits(method, view_name)
 
     def _raise(self, retry_after):
         resp = HTTPTooManyRequests(content={

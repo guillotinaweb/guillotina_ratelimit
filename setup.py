@@ -13,7 +13,8 @@ setup(
     description='Provide global and service rate limiting in a per user basis',
     long_description=README,
     install_requires=[
-        'guillotina>=4.0.0',
+        'guillotina>=4.3.4',
+        'guillotina_rediscache==2.0.4'
     ],
     author='Ferran Llamas',
     author_email='llamas.arroniz@gmai.com',
@@ -33,7 +34,6 @@ setup(
             'pytest-cov',
             'coverage',
             'pytest-docker-fixtures',
-            'guillotina_rediscache',
         ]
     },
     license='BSD',

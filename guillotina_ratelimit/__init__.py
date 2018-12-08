@@ -1,4 +1,4 @@
-# from guillotina import configure
+from guillotina import configure
 
 
 app_settings = {
@@ -8,9 +8,9 @@ app_settings = {
             "hits": 10,
         },
         "state_manager": "memory",
+        "redis_prefix_key": 'ratelimit-'
     }
 }
-
 
 _registered_service_ratelimits = {}
 
@@ -22,10 +22,30 @@ def register_ratelimits(klass, config):
     _registered_service_ratelimits[klass] = config
 
 
-def get_service_ratelimits(klass):
-    if klass not in _registered_service_ratelimits:
+def get_service_ratelimits(method, view_name):
+    if not view_name:
+        # Not a service. Will be dealt with on global rate limits
         return None
-    return _registered_service_ratelimits[klass]
+
+    # Get app registered services from configuration
+    _guillotina_services = [
+        s for s in configure._registered_configurations
+        if 'service' in s
+    ]
+
+    # Iterate them and look for a match
+    for (_, service) in _guillotina_services:
+        _klass = service['klass']
+        _method = service['config']['method']
+        _module = service['config']['module']
+        _view_name = _klass.__route__.view_name
+
+        if method == _method and view_name == _view_name:
+            # Return registered rate limits
+            return _registered_service_ratelimits[_module]
+
+    # No configured rate-limits found
+    return None
 
 
 class configure_ratelimits(object):
