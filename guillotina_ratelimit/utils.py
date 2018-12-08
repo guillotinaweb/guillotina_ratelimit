@@ -14,7 +14,7 @@ class Timer:
     def remaining(self):
         if not self._start_time:
             return self._timeout
-        return max((time.time() - self._start_time) - self._timeout, 0)
+        return max(self._timeout - (time.time() - self._start_time), 0)
 
     async def _job(self):
         self._start_time = time.time()

@@ -22,7 +22,6 @@ _EMPTY = object()
 class MemoryRateLimitingStateManager:
     """For testing purposes only
     """
-
     def __init__(self):
         self._counts = {}
         self._timers = {}
@@ -52,7 +51,7 @@ class MemoryRateLimitingStateManager:
 
     async def get_remaining_time(self, user, key):
         if key not in self._timers.get(user, {}):
-            return 0
+            return 0.0
         return self._timers[user][key].remaining
 
     async def _clean(self):

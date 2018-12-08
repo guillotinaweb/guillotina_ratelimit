@@ -37,12 +37,12 @@ def get_service_ratelimits(method, view_name):
     for (_, service) in _guillotina_services:
         _klass = service['klass']
         _method = service['config']['method']
-        _module = service['config']['module']
+        _func = service['config']['module']
         _view_name = _klass.__route__.view_name
 
         if method == _method and view_name == _view_name:
-            # Return registered rate limits
-            return _registered_service_ratelimits[_module]
+            # Return registered rate limits for corresponding function
+            return _registered_service_ratelimits[_func]
 
     # No configured rate-limits found
     return None
@@ -52,14 +52,14 @@ class configure_ratelimits(object):
     def __init__(self, **config):
         self.config = config
 
-    def __call__(self, klass):
-        register_ratelimits(klass, self.config)
-        return klass
+    def __call__(self, func):
+        register_ratelimits(func, self.config)
+        return func
 
 
 def includeme(root):
     """
     custom application initialization here
     """
-    # configure.scan('guillotina_ratelimit.api')
+    configure.scan('guillotina_ratelimit.subscribers')
     pass

@@ -3,6 +3,18 @@ import json
 import asyncio
 
 
+async def test_global_rate_limits(container_requester, dummy_request, state_manager):
+    aiotask_context.set('request', dummy_request)
+
+    async with container_requester as requester:
+        for i in range(20):
+            resp, status = await requester('GET', '/db/guillotina')
+            if status not in (200, 201):
+                assert status == 429
+
+    aiotask_context.set('request', None)
+
+
 async def prepare_rate_limited_endpoint(requester):
     resp, status = await requester('POST', '/db/guillotina', data=json.dumps({
         '@type': 'Item',
@@ -23,6 +35,8 @@ async def prepare_rate_limited_endpoint(requester):
         resp, status = await requester('GET', f'/db/guillotina/foobar-item')
         assert status is 200
         assert str(i) in resp['title']
+
+    aiotask_context.set('request', None)
 
 
 async def test_response_should_contain_correct_header_and_status(container_requester,

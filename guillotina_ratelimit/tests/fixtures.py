@@ -7,7 +7,7 @@ base_ratelimit_settings = {
     'state_manager': 'memory',
     'redis_prefix_key': 'ratelimit-',
     # Global rate limits
-    'global': {'seconds': 10, 'hits': 10},
+    'global': {'seconds': 10 * 60 * 60, 'hits': 15},
 }
 
 
@@ -30,7 +30,7 @@ testing.configure_with(base_settings_configurator)
 
 
 @pytest.fixture('function', params=[
-    {'state_manager': 'redis'},
+    # {'state_manager': 'redis'},
     {'state_manager': 'memory'},
 ])
 def state_manager(request, redis, dummy_request, loop):

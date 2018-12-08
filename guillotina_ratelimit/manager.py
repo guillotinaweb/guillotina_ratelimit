@@ -31,6 +31,14 @@ class RateLimitManager:
             key=self.request_key,
         )
 
+    async def set_expiration(self, expiration):
+        if expiration:
+            await self.state_manager.expire_after(
+                user=self.user,
+                key=self.request_key,
+                ttl=expiration,
+            )
+
     async def exceeds_limits(self):
         if not self.configured_ratelimits:
             return False
