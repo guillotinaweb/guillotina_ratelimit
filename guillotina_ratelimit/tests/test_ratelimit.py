@@ -11,13 +11,13 @@ async def test_global_rate_limits(container_requester, dummy_request,
     retry_after = None
     async with container_requester as requester:
         for i in range(global_rate_limits['hits'] + 1):
-            resp, status = await requester('GET', '/db/guillotina')
+            resp, status, headers = await requester.make_request(
+                'GET', '/db/guillotina')
             if status not in (200, 201):
-                # Check status and content
+                # Check status, content and headers
                 assert status == 429
                 assert resp['reason'] == 'Global rate-limits exceeded'
-                retry_after = resp['Retry-After']
-                assert isinstance(retry_after, float)
+                retry_after = float(headers['Retry-After'])
                 assert retry_after < global_rate_limits['seconds']
                 break
 
@@ -63,13 +63,12 @@ async def test_service_rate_limits(container_requester, dummy_request,
         await prepare_rate_limited_endpoint(requester)
 
         # Call again. We should get rate limited now
-        resp, status = await requester(
+        resp, status, headers = await requester.make_request(
             'POST', '/db/guillotina/foobar-item/@foobar?count=55')
-        # Check status and content
+        # Check status, content and headers
         assert status == 429
         assert resp['reason'] == 'Service rate-limits exceeded'
-        retry_after = resp['Retry-After']
-        assert isinstance(retry_after, float)
+        retry_after = float(headers['Retry-After'])
         assert retry_after < SERVICE_RATE_LIMITS['seconds']
 
         # Wait for retry_after and check that it works
