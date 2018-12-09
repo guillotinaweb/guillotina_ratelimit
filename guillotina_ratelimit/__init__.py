@@ -9,15 +9,6 @@ app_settings = {
     }
 }
 
-_registered_service_ratelimits = {}
-
-
-def register_ratelimits(klass, config):
-    if klass in _registered_service_ratelimits:
-        # do not register twice
-        raise Exception('Rate-limit was configured twice!')
-    _registered_service_ratelimits[klass] = config
-
 
 def get_service_ratelimits(method, view_name):
     if not view_name:
@@ -32,26 +23,18 @@ def get_service_ratelimits(method, view_name):
 
     # Iterate them and look for a match
     for (_, service) in _guillotina_services:
-        _klass = service['klass']
-        _method = service['config']['method']
-        _func = service['config']['module']
-        _view_name = _klass.__route__.view_name
+        if 'rate_limits' not in service['config']:
+            # No rate limits configured
+            continue
 
+        _method = service['config']['method']
+        _view_name = service['klass'].__route__.view_name
         if method == _method and view_name == _view_name:
             # Return registered rate limits for corresponding function
-            return _registered_service_ratelimits[_func]
+            return service['config'].get('rate_limits', None)
 
     # No configured rate-limits found
     return None
-
-
-class configure_ratelimits(object):
-    def __init__(self, **config):
-        self.config = config
-
-    def __call__(self, func):
-        register_ratelimits(func, self.config)
-        return func
 
 
 def includeme(root):

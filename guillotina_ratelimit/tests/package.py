@@ -1,5 +1,4 @@
 from guillotina import configure
-from guillotina_ratelimit import configure_ratelimits
 
 SERVICE_RATE_LIMITS = {
     'seconds': 2,
@@ -7,8 +6,9 @@ SERVICE_RATE_LIMITS = {
 }
 
 
-@configure_ratelimits(**SERVICE_RATE_LIMITS)
-@configure.service(name='@foobar', method='POST')
+@configure.service(
+    name='@foobar', method='POST',
+    rate_limits=SERVICE_RATE_LIMITS)
 async def foobar(context, request):
     """Dummy endpoint to be used in tests.
 

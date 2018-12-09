@@ -48,12 +48,17 @@ Global rate limits can be configured in app's settings aswell::
 
 ```
 
-whereas the `@configure_ratelimits` decorator can be used on specific
-services::
+whereas the `rate_limits` confing key can be used in the
+`@configure.service` decorator caon specific services::
 
 ``` python
-    @configure_ratelimits(seconds=10, hits=1)
-    @configure.service(name='@foobar', method='POST')
+    @configure.service(
+        name='@foobar', method='POST',
+        rate_limits={
+            "seconds": 10,
+            "hits": 1,
+        }
+    )
     async def foobar_endpoint(context, request):
         """
         """
