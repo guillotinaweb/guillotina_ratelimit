@@ -42,7 +42,7 @@ Global rate limits can be configured in app's settings aswell::
                 "hits": 500
                 },
             "state_manager": "redis",
-            "redis_prefix_key": 'ratelimit-'
+            "redis_prefix_key": "ratelimit-"
         }
     }
 
