@@ -18,7 +18,9 @@ async def on_before_view_is_rendered(event):
 
     if request.view_name:
         # Request to a service
-        managers.append(ServiceRateLimitManager(request))
+        _service = ServiceRateLimitManager(request)
+        if _service.configured_ratelimits:
+            managers.append(_service)
 
     for mgr in managers:
         initial_count = await mgr.get_current_count()
