@@ -10,14 +10,17 @@ async def on_before_view_is_rendered(event):
     """
     request = event.request
 
-    _to_run = [
-        GlobalRateLimitManager(request),
-    ]
+    managers = []
+
+    _global = GlobalRateLimitManager(request)
+    if _global.configured_ratelimits:
+        managers.append(_global)
+
     if request.view_name:
         # Request to a service
-        _to_run.append(ServiceRateLimitManager(request))
+        managers.append(ServiceRateLimitManager(request))
 
-    for mgr in _to_run:
+    for mgr in managers:
         initial_count = await mgr.get_current_count()
         await mgr.increment()
         if not initial_count:

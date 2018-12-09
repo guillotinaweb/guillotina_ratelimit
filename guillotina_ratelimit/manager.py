@@ -19,6 +19,10 @@ class RateLimitManager:
     def configured_ratelimits(self):
         raise NotImplementedError()
 
+    @property
+    def hits_limit(self):
+        raise NotImplementedError()
+
     async def get_current_count(self):
         return await self.state_manager.get_count(
             user=self.user,
@@ -43,9 +47,11 @@ class RateLimitManager:
         if not self.configured_ratelimits:
             return False
 
-        limit = self.configured_ratelimits['hits']
+        if not self.hits_limit:
+            return False
+
         current_count = await self.get_current_count()
-        return current_count > limit
+        return current_count > self.hits_limit
 
     async def get_retry_after(self):
         return await self.state_manager.get_remaining_time(
@@ -71,12 +77,20 @@ class GlobalRateLimitManager(RateLimitManager):
         return 'Global'
 
     @property
+    def hits_limit(self):
+        crl = self.configured_ratelimits
+        if not crl:
+            return None
+        return crl['hits']
+
+    @property
     def configured_ratelimits(self):
         return app_settings.get('ratelimit', {}).get('global', None)
 
     def _raise(self, retry_after):
         resp = HTTPTooManyRequests(content={
-            'reason': 'Global rate-limits exceeded'
+            'reason': 'Global rate-limits exceeded',
+            'Retry-After': retry_after,
         })
         resp.headers['Retry-After'] = str(retry_after)
         raise resp
@@ -90,6 +104,13 @@ class ServiceRateLimitManager(RateLimitManager):
         return f'{method} {path}'
 
     @property
+    def hits_limit(self):
+        crl = self.configured_ratelimits
+        if not crl:
+            return None
+        return crl['hits'] - 1
+
+    @property
     def configured_ratelimits(self):
         method = self.request.method
         view_name = self.request.view_name
@@ -97,7 +118,8 @@ class ServiceRateLimitManager(RateLimitManager):
 
     def _raise(self, retry_after):
         resp = HTTPTooManyRequests(content={
-            'reason': 'Service rate-limits exceeded'
+            'reason': 'Service rate-limits exceeded',
+            'Retry-After': retry_after,
         })
         resp.headers['Retry-After'] = str(retry_after)
         raise resp

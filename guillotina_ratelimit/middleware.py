@@ -2,6 +2,7 @@ from guillotina_ratelimit.manager import GlobalRateLimitManager
 from guillotina_ratelimit.manager import ServiceRateLimitManager
 from guillotina.response import HTTPTooManyRequests
 from aiohttp import web
+import json
 
 
 class RateLimitHandler:
@@ -18,11 +19,15 @@ class RateLimitHandler:
             await ServiceRateLimitManager(request).__call__()
 
         except HTTPTooManyRequests as ex:  # noqa
-            # TODO: investigate how to correctly return another
-            # response from within an aiohttp middleware
-            return web.Response(
-                status=429,
+            resp = web.Response(
+                status=ex.status_code,
+                body=json.dumps(ex.content),
+                content_type='application/json'
             )
+            # Set retry-after in headers aswell
+            resp.headers['Retry-After'] = ex.headers['Retry-After']
+            return resp
+
         else:
             # Handle response normally
             return await self.handler(request)
