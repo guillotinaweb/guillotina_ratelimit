@@ -4,9 +4,6 @@ language: python
 python:
     - "3.6"
 sudo: required
-env:
-    - DATABASE=DUMMY
-
 cache:
   directories:
     - eggs
