@@ -3,11 +3,8 @@ from guillotina import configure
 
 app_settings = {
     "ratelimit": {
-        "global": {
-            "seconds": 10,
-            "hits": 10,
-        },
-        "state_manager": "memory",
+        "global": None,
+        "state_manager": "redis",
         "redis_prefix_key": 'ratelimit-'
     }
 }
