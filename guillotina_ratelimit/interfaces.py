@@ -24,3 +24,13 @@ class IRateLimitingStateManager(Interface):
         """Gets the remaining time until the counter is reset
         """
         pass
+
+    async def get_user_rates(self, user):
+        """Returns the current rates for a given user
+        """
+        pass
+
+    async def get_all_rates(self):
+        """Returns the complete rate limits state for the application
+        """
+        pass

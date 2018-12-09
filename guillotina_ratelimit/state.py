@@ -65,6 +65,22 @@ class MemoryRateLimitingStateManager:
                     pass
         self._timers = {}
 
+    async def get_user_rates(self, user):
+        result = {}
+        user_counts = self._counts.get(user, {})
+        # Append remaining times
+        for key, count in user_counts.items():
+            remaining = await self.get_remaining_time(user, key)
+            result[key] = {'count': count, 'remaining': remaining}
+        return result
+
+    async def get_all_rates(self):
+        result = {}
+        for user in self._counts:
+            user_rates = await self.get_user_rates(user)
+            result[user] = user_rates
+        return result
+
 
 @configure.utility(provides=IRateLimitingStateManager, name='redis')
 class RedisRateLimitingStateManager:
@@ -128,6 +144,14 @@ class RedisRateLimitingStateManager:
 
     async def _clean(self):
         await self._cache.flushall()
+
+    async def get_user_rates(self, user):
+        # TODO
+        pass
+
+    async def get_all_rates(self):
+        # TODO
+        pass
 
 
 def get_state_manager(loop=None):
