@@ -1,31 +1,15 @@
 from guillotina import configure
 from guillotina.interfaces import IBeforeRenderViewEvent
-from guillotina_ratelimit.manager import GlobalRateLimitManager
-from guillotina_ratelimit.manager import ServiceRateLimitManager
+from guillotina.component import get_all_utilities_registered_for
+from guillotina_ratelimit.interfaces import IRateLimitManager
 
 
 @configure.subscriber(for_=IBeforeRenderViewEvent)
 async def on_before_view_is_rendered(event):
-    """Increment rate limit counters for request
+    """Each rate limit manager takes into account current request
     """
     request = event.request
-
-    managers = []
-
-    _global = GlobalRateLimitManager(request)
-    if _global.configured_ratelimits:
-        managers.append(_global)
-
-    if request.view_name:
-        # Request to a service
-        _service = ServiceRateLimitManager(request)
-        if _service.configured_ratelimits:
-            managers.append(_service)
-
+    managers = get_all_utilities_registered_for(IRateLimitManager)
     for mgr in managers:
-        initial_count = await mgr.get_current_count()
-        await mgr.increment()
-        if not initial_count:
-            # Set expiration if needed
-            expiration = mgr.configured_ratelimits['seconds']
-            await mgr.set_expiration(expiration)
+        if mgr.request_matches(request):
+            await mgr.count_request(request)

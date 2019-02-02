@@ -1,5 +1,5 @@
-from guillotina_ratelimit.manager import GlobalRateLimitManager
-from guillotina_ratelimit.manager import ServiceRateLimitManager
+from guillotina_ratelimit.interfaces import IRateLimitManager
+from guillotina.component import get_all_utilities_registered_for
 from guillotina.response import HTTPTooManyRequests
 from aiohttp import web
 import json
@@ -11,12 +11,12 @@ class RateLimitHandler:
         self.handler = handler
 
     async def __call__(self, request):
-
         try:
             # The following will raise HTTPTooManyRequests if limits
-            # are exceeded
-            await GlobalRateLimitManager(request).__call__()
-            await ServiceRateLimitManager(request).__call__()
+            # for at least one of the managers are exceeded
+            managers = get_all_utilities_registered_for(IRateLimitManager)
+            for mgr in managers:
+                await mgr(request)
 
         except HTTPTooManyRequests as ex:  # noqa
             resp = web.Response(

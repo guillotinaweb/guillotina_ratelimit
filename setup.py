@@ -13,7 +13,7 @@ setup(
     description='Provide global and service rate limiting in a per user basis',
     long_description=README,
     install_requires=[
-        'guillotina>=4.3.5.dev0',
+        'guillotina>=4.3.5',
         'guillotina_rediscache>=2.1.0'
     ],
     author='Ferran Llamas',

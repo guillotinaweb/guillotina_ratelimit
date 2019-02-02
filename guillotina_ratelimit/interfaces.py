@@ -24,3 +24,20 @@ class IRateLimitingStateManager(Interface):
         """Gets the remaining time until the counter is reset
         """
         pass
+
+
+class IRateLimitManager(Interface):
+    """Takes care of applying rate limits.
+    """
+    def request_matches(self, request):
+        """Checks whether the manager should take the current request into
+        account
+        """
+
+    async def count_request(self, request):
+        """Take request into account
+        """
+
+    async def __call__(self):
+        """Does the job
+        """
