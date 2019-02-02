@@ -121,3 +121,20 @@ async def test_get_remaining_time(state_manager, loop):
         remaining = new_remaining
 
     await clear_cache(sm)
+
+
+async def test_dump_user_counts(state_manager, loop):
+    sm = get_state_manager(loop)
+
+    assert await sm.get_count('user', '@foobar') == 0
+    await sm.increment('user', '@foobar')
+    await sm.increment('user', '@foobar')
+    await sm.expire_after('user', '@foobar', 10)
+    assert await sm.get_count('user', '@foobar') == 2
+
+    report = await sm.dump_user_counts('user')
+    assert '@foobar' in report
+    assert report['@foobar']['count'] == 2
+    assert 0 < report['@foobar']['count'] < 10
+
+    await clear_cache(sm)

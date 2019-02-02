@@ -25,6 +25,12 @@ class IRateLimitingStateManager(Interface):
         """
         pass
 
+    async def dump_user_counts(self, user):
+        """
+        Returns all current counts for the given user
+        """
+        pass
+
 
 class IRateLimitManager(Interface):
     """Takes care of applying rate limits.
@@ -36,6 +42,11 @@ class IRateLimitManager(Interface):
 
     async def count_request(self, request):
         """Take request into account
+        """
+
+    async def get_user_report(self, user):
+        """
+        Returns dict with rate limit report for given user
         """
 
     async def __call__(self):

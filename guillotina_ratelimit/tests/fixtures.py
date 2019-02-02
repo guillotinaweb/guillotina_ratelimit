@@ -37,6 +37,7 @@ def state_manager(request, redis, dummy_request, loop):
     configured_mgr = request.param.get('state_manager')
     app_settings['ratelimit']['state_manager'] = configured_mgr
     if configured_mgr == 'redis':
+        print('REDIS')
         # Redis
         app_settings.update({"redis": {
             'host': redis[0],
@@ -56,6 +57,7 @@ def state_manager(request, redis, dummy_request, loop):
         loop.run_until_complete(close_redis_pool())
     else:
         # Memory
+        print('MEMORY')
         yield
 
 

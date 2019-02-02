@@ -43,7 +43,7 @@ class RateLimitManager:
         request_key = self.request_key(request)
         current_count = await self.get_current_count(user, request_key)
 
-        return current_count > max_hits
+        return current_count and current_count > max_hits
 
     async def get_retry_after(self, user, request_key):
         return await self.state_manager.get_remaining_time(user, request_key)
@@ -60,6 +60,9 @@ class RateLimitManager:
 
     def _raise(self, retry_after):
         raise NotImplementedError()
+
+    async def get_user_report(self, user):
+        return await self.state_manager.dump_user_counts(user)
 
     async def __call__(self, request):
         if not await self.exceeds_limits(request):

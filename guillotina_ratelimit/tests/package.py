@@ -10,7 +10,8 @@ SERVICE_RATE_LIMITS = {
     name='@foobar', method='POST',
     rate_limits=SERVICE_RATE_LIMITS)
 async def foobar(context, request):
-    """Dummy endpoint to be used in tests.
+    """
+    Dummy endpoint to be used in tests.
 
     Adds '-foobar' to the title of whatever object is called
     against. Appends a count parameter to ease testing aswell.
@@ -22,3 +23,13 @@ async def foobar(context, request):
     context._p_register()
     # Return it
     return {'title': context.title}
+
+
+@configure.service(
+    name='@foobar2', method='GET',
+    rate_limits=SERVICE_RATE_LIMITS)
+async def foobar2(context, request):
+    """
+    Dummy endpoint to be used in tests.
+    """
+    return {}

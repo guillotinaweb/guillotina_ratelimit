@@ -65,6 +65,18 @@ class MemoryRateLimitingStateManager:
                     pass
         self._timers = {}
 
+    async def dump_user_counts(self, user):
+        counts = {}
+        for key, key_count in self._counts.get(user, {}).items():
+            timer = self._timers.get(user, {}).get(key)
+            remaining = timer.remaining if timer else None
+            if remaining:
+                counts[key] = {
+                    'count': key_count,
+                    'remaining': remaining,
+                }
+        return counts
+
 
 @configure.utility(provides=IRateLimitingStateManager, name='redis')
 class RedisRateLimitingStateManager:
@@ -93,41 +105,52 @@ class RedisRateLimitingStateManager:
 
         else:
             self._cache = _EMPTY
-            return None
+            raise Exception('Cache not found')
 
     def _build(self, some_string):
         return f'{self._cache_prefix}{some_string}'
 
     async def increment(self, user, key):
         cache = await self.get_cache()
-        if cache:
-            hashfield = self._build(user + key)
-            await cache.hincrby(hashfield, 'count', increment=1)
+        hashfield = self._build(user + key)
+        await cache.hincrby(hashfield, 'count', increment=1)
 
     async def get_count(self, user, key):
         cache = await self.get_cache()
-        if cache:
-            hashfield = self._build(user + key)
-            count = await cache.hget(hashfield, 'count')
-            return int(count or b'0')
+        hashfield = self._build(user + key)
+        count = await cache.hget(hashfield, 'count')
+        return int(count or b'0')
 
     async def expire_after(self, user, key, ttl):
         cache = await self.get_cache()
-        if cache:
-            hashfield = self._build(user + key)
-            await cache.expire(hashfield, timeout=ttl)
+        hashfield = self._build(user + key)
+        await cache.expire(hashfield, timeout=ttl)
 
     async def get_remaining_time(self, user, key):
         cache = await self.get_cache()
-        if cache:
-            hashfield = self._build(user + key)
-            ms = await cache.pttl(hashfield)
-            if not ms or ms < 0:
-                return 0.0
-            return ms/1000.0
+        hashfield = self._build(user + key)
+        ms = await cache.pttl(hashfield)
+        if not ms or ms < 0:
+            return 0.0
+        return ms/1000.0
 
     async def _clean(self):
         await self._cache.flushall()
+
+    async def dump_user_counts(self, user):
+        # TODO: improve so that we don't do so many calls to redis...
+        report = {}
+        async for key in self._list(user):
+            key = key.lstrip(user)
+            count = await self.get_count(user, key)
+            remaining = await self.get_remaining_time(user, key)
+            report[key] = {'count': count, 'remaining': remaining}
+        return report
+
+    async def _list(self, user):
+        cache = await self.get_cache()
+        async for key in cache.iscan(match=self._build(user + '*')):
+            yield key.decode().replace(self._cache_prefix, '')
 
 
 def get_state_manager(loop=None):
@@ -135,7 +158,7 @@ def get_state_manager(loop=None):
     """
     utility = get_utility(
         IRateLimitingStateManager,
-        name=app_settings.get('ratelimit', {}).get('state_manager', 'memory'),
+        name=app_settings.get('ratelimit', {}).get('state_manager', 'redis'),
     )
     if loop:
         # This is only for testing purposes, as we need it to have the
