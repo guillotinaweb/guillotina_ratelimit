@@ -9,13 +9,13 @@ async def clear_cache(sm):
 async def test_increment_should_increment(state_manager, loop):
     sm = get_state_manager(loop)
 
-    # Check initial count is 0
-    assert await sm.get_count('user', '@foobar') is 0
+    # Check initial count == 0
+    assert await sm.get_count('user', '@foobar') == 0
 
     # Check it increments by one at a time
     for i in range(3):
         await sm.increment('user', '@foobar')
-        assert await sm.get_count('user', '@foobar') is i + 1
+        assert await sm.get_count('user', '@foobar') == i + 1
 
     await clear_cache(sm)
 
@@ -23,16 +23,16 @@ async def test_increment_should_increment(state_manager, loop):
 async def test_increment_should_count_per_user(state_manager, loop):
     sm = get_state_manager(loop)
 
-    assert await sm.get_count('user1', '@foobar') is 0
-    assert await sm.get_count('user2', '@foobar') is 0
+    assert await sm.get_count('user1', '@foobar') == 0
+    assert await sm.get_count('user2', '@foobar') == 0
 
     await sm.increment('user1', '@foobar')
     await sm.increment('user1', '@foobar')
 
     await sm.increment('user2', '@foobar')
 
-    assert await sm.get_count('user1', '@foobar') is 2
-    assert await sm.get_count('user2', '@foobar') is 1
+    assert await sm.get_count('user1', '@foobar') == 2
+    assert await sm.get_count('user2', '@foobar') == 1
 
     await clear_cache(sm)
 
@@ -40,13 +40,13 @@ async def test_increment_should_count_per_user(state_manager, loop):
 async def test_expire_after_should_reset_counter(state_manager, loop):
     sm = get_state_manager(loop)
 
-    assert await sm.get_count('user', '@foobar') is 0
+    assert await sm.get_count('user', '@foobar') == 0
     await sm.increment('user', '@foobar')
     await sm.increment('user', '@foobar')
     await sm.expire_after('user', '@foobar', 2)
-    assert await sm.get_count('user', '@foobar') is 2
+    assert await sm.get_count('user', '@foobar') == 2
     await asyncio.sleep(3)
-    assert await sm.get_count('user', '@foobar') is 0
+    assert await sm.get_count('user', '@foobar') == 0
 
     await clear_cache(sm)
 
@@ -54,10 +54,10 @@ async def test_expire_after_should_reset_counter(state_manager, loop):
 async def test_expire_after_should_reset_per_user_and_per_endpoint(state_manager, loop):
     sm = get_state_manager(loop)
 
-    assert await sm.get_count('user1', '@foobar1') is 0
-    assert await sm.get_count('user1', '@foobar2') is 0
-    assert await sm.get_count('user2', '@foobar1') is 0
-    assert await sm.get_count('user2', '@foobar2') is 0
+    assert await sm.get_count('user1', '@foobar1') == 0
+    assert await sm.get_count('user1', '@foobar2') == 0
+    assert await sm.get_count('user2', '@foobar1') == 0
+    assert await sm.get_count('user2', '@foobar2') == 0
 
     # Add at least one count for each pair
     await sm.increment('user1', '@foobar1')
@@ -73,29 +73,29 @@ async def test_expire_after_should_reset_per_user_and_per_endpoint(state_manager
 
     # Sleep 1 and check only one counter has been reset
     await asyncio.sleep(1.1)
-    assert await sm.get_count('user1', '@foobar1') is 0
-    assert await sm.get_count('user1', '@foobar2') is 1
-    assert await sm.get_count('user2', '@foobar1') is 1
-    assert await sm.get_count('user2', '@foobar2') is 1
+    assert await sm.get_count('user1', '@foobar1') == 0
+    assert await sm.get_count('user1', '@foobar2') == 1
+    assert await sm.get_count('user2', '@foobar1') == 1
+    assert await sm.get_count('user2', '@foobar2') == 1
 
     await asyncio.sleep(1)
-    assert await sm.get_count('user1', '@foobar1') is 0
-    assert await sm.get_count('user1', '@foobar2') is 0
-    assert await sm.get_count('user2', '@foobar1') is 1
-    assert await sm.get_count('user2', '@foobar2') is 1
+    assert await sm.get_count('user1', '@foobar1') == 0
+    assert await sm.get_count('user1', '@foobar2') == 0
+    assert await sm.get_count('user2', '@foobar1') == 1
+    assert await sm.get_count('user2', '@foobar2') == 1
 
     await asyncio.sleep(1)
-    assert await sm.get_count('user1', '@foobar1') is 0
-    assert await sm.get_count('user1', '@foobar2') is 0
-    assert await sm.get_count('user2', '@foobar1') is 0
-    assert await sm.get_count('user2', '@foobar2') is 1
+    assert await sm.get_count('user1', '@foobar1') == 0
+    assert await sm.get_count('user1', '@foobar2') == 0
+    assert await sm.get_count('user2', '@foobar1') == 0
+    assert await sm.get_count('user2', '@foobar2') == 1
 
     # All should be expired by now
     await asyncio.sleep(1)
-    assert await sm.get_count('user1', '@foobar1') is 0
-    assert await sm.get_count('user1', '@foobar2') is 0
-    assert await sm.get_count('user2', '@foobar1') is 0
-    assert await sm.get_count('user2', '@foobar2') is 0
+    assert await sm.get_count('user1', '@foobar1') == 0
+    assert await sm.get_count('user1', '@foobar2') == 0
+    assert await sm.get_count('user2', '@foobar1') == 0
+    assert await sm.get_count('user2', '@foobar2') == 0
 
     await clear_cache(sm)
 
@@ -103,7 +103,7 @@ async def test_expire_after_should_reset_per_user_and_per_endpoint(state_manager
 async def test_get_remaining_time(state_manager, loop):
     sm = get_state_manager(loop)
 
-    assert await sm.get_count('user', '@foobar') is 0
+    assert await sm.get_count('user', '@foobar') == 0
     await sm.increment('user', '@foobar')
     await sm.increment('user', '@foobar')
 

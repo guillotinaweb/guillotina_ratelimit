@@ -2,7 +2,7 @@
 dist: trusty
 language: python
 python:
-    - "3.6"
+    - "3.6.0"
 sudo: required
 cache:
   directories:
