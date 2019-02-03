@@ -42,7 +42,7 @@ Global rate limits can be configured in app's settings aswell::
                 "hits": 500
                 },
             "state_manager": "redis",
-            "redis_prefix_key": "ratelimit-"
+            "redis_prefix_key": "ratelimit"
         }
     }
 
@@ -68,9 +68,6 @@ whereas the `rate_limits` confing key can be used in the
 ## Possible improvements
 
 - Add user whitelisting to bypass rate-limiting
-
-- Keep the real "rate" of requests. Right now, we only start counters
-  at every first request after every expiration.
 
 - Make rate-limits configurable to specific roles
 

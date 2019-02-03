@@ -5,7 +5,7 @@ app_settings = {
     "ratelimit": {
         "global": None,
         "state_manager": "redis",
-        "redis_prefix_key": 'ratelimit-'
+        "redis_prefix_key": 'ratelimit'
     }
 }
 

@@ -5,7 +5,7 @@ import pytest
 
 base_ratelimit_settings = {
     'state_manager': 'memory',
-    'redis_prefix_key': 'ratelimit-',
+    'redis_prefix_key': 'ratelimit',
     # Global rate limits here
     'global': None,
 }
@@ -31,13 +31,13 @@ testing.configure_with(base_settings_configurator)
 
 @pytest.fixture('function', params=[
     {'state_manager': 'redis'},
-    {'state_manager': 'memory'},
+#    {'state_manager': 'memory'},
 ])
 def state_manager(request, redis, dummy_request, loop):
     configured_mgr = request.param.get('state_manager')
     app_settings['ratelimit']['state_manager'] = configured_mgr
     if configured_mgr == 'redis':
-        print('REDIS')
+        print(f'REDIS: {redis[0]}:{redis[1]}')
         # Redis
         app_settings.update({"redis": {
             'host': redis[0],

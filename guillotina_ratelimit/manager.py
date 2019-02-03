@@ -5,6 +5,7 @@ from guillotina import app_settings
 from guillotina import configure
 from guillotina_ratelimit import get_service_ratelimits
 from guillotina_ratelimit.interfaces import IRateLimitManager
+import time
 
 
 class RateLimitManager:
@@ -51,12 +52,13 @@ class RateLimitManager:
     async def count_request(self, request):
         user = get_authenticated_user_id(request)
         request_key = self.request_key(request)
-        initial_count = await self.get_current_count(user, request_key)
-        await self.increment(user, request_key)
-        if not initial_count:
-            # Set expiration if needed
-            crl = self.configured_ratelimits(request)
-            await self.set_expiration(user, request_key, expiration=crl['seconds'])
+
+        timestamp = time.time()
+        await self.increment(user, request_key, timestamp)
+
+        # Set key expiration
+        crl = self.configured_ratelimits(request)
+        await self.set_expiration(user, request_key, timestamp, expiration=crl['seconds'])
 
     def _raise(self, retry_after):
         raise NotImplementedError()

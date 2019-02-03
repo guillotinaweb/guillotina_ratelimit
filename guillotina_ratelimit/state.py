@@ -83,7 +83,7 @@ class RedisRateLimitingStateManager:
     def __init__(self):
         self.loop = None
         ratelimit_settings = app_settings.get('ratelimit', {})
-        self._cache_prefix = ratelimit_settings.get('redis_prefix_key', 'ratelimit-')
+        self._cache_prefix = ratelimit_settings.get('redis_prefix_key', 'ratelimit')
         self._cache = _EMPTY
 
     def set_loop(self, loop=None):
@@ -95,41 +95,52 @@ class RedisRateLimitingStateManager:
             return self._cache
 
         if aioredis is None:
-            logger.warning('guillotina_rediscache not installed')
-            self._cache = _EMPTY
-            return None
+            raise Exception('guillotina_rediscache not installed')
 
         if 'redis' in app_settings:
             self._cache = aioredis.Redis(await get_redis_pool(loop=self.loop))
             return self._cache
 
-        else:
-            self._cache = _EMPTY
-            raise Exception('Cache not found')
+        raise Exception('Cache not found')
 
     def _build(self, some_string):
-        return f'{self._cache_prefix}{some_string}'
+        return f'{self._cache_prefix}-{some_string}'
 
-    async def increment(self, user, key):
+    async def increment(self, user, key, timestamp):
         cache = await self.get_cache()
-        hashfield = self._build(user + key)
-        await cache.hincrby(hashfield, 'count', increment=1)
+        request_key = self._build(';'.join([user, key, str(timestamp)]))
+        await cache.hincrby(request_key, 'count', increment=1)
+
+        # We need to add the main key aswell, where the remaining time
+        # will be obtained from
+        main_key = self._build(';'.join([user, key]))
+        await cache.hincrby(main_key, 'count', increment=1)
 
     async def get_count(self, user, key):
         cache = await self.get_cache()
-        hashfield = self._build(user + key)
-        count = await cache.hget(hashfield, 'count')
-        return int(count or b'0')
+        request_key = self._build(';'.join([user, key]))
+        request_count = 0
+        async for key in cache.iscan(match=request_key + '*'):
+            request_count += 1
+        # There is always an extra key
+        return request_count - 1 if request_count else 0
 
-    async def expire_after(self, user, key, ttl):
+    async def expire_after(self, user, key, timestamp, ttl):
         cache = await self.get_cache()
-        hashfield = self._build(user + key)
-        await cache.expire(hashfield, timeout=ttl)
+        # We need to expire the individual keys so that redis gets
+        # cleaned up eventually
+        request_key = self._build(';'.join([user, key, str(timestamp)]))
+        await cache.expire(request_key, timeout=ttl)
+
+        # We use a key without the timestamp for which we always the
+        # latest expiration to be able to get the remaining time
+        main_key = self._build(';'.join([user, key]))
+        await cache.expire(main_key, timeout=ttl)
 
     async def get_remaining_time(self, user, key):
         cache = await self.get_cache()
-        hashfield = self._build(user + key)
-        ms = await cache.pttl(hashfield)
+        main_key = self._build(';'.join([user, key]))
+        ms = await cache.pttl(main_key)
         if not ms or ms < 0:
             return 0.0
         return ms/1000.0
@@ -138,19 +149,28 @@ class RedisRateLimitingStateManager:
         await self._cache.flushall()
 
     async def dump_user_counts(self, user):
-        # TODO: improve so that we don't do so many calls to redis...
         report = {}
-        async for key in self._list(user):
-            key = key.lstrip(user)
-            count = await self.get_count(user, key)
-            remaining = await self.get_remaining_time(user, key)
-            report[key] = {'count': count, 'remaining': remaining}
+        user_keys = await self._list_user_keys(user)
+        for request_key in user_keys:
+            count = await self.get_count(user, request_key)
+            report[request_key] = {'count': count}
         return report
 
-    async def _list(self, user):
+    async def _list_user_keys(self, user):
         cache = await self.get_cache()
-        async for key in cache.iscan(match=self._build(user + '*')):
-            yield key.decode().replace(self._cache_prefix, '')
+        user_keys = set({})
+        async for key in cache.iscan(match=self._build(user) + '*'):
+            request_key = ';'.join(key.decode().split(';')[:-1])
+            if ';' not in request_key:
+                # Prevents adding the main key
+
+                # TODO: should be more modular and testeable...
+                continue
+
+            # Get only request part of the redis key
+            request_key = request_key.split(';')[-1]
+            user_keys.update({request_key})
+        return user_keys
 
 
 def get_state_manager(loop=None):
